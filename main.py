@@ -6,7 +6,7 @@ import pandas as pd
 from HashTable import PriorityHashQueue
 
 
-def filterWords(word_list, banned_letters, baseline_answer, misplaced_letters):
+def filterWords(word_list, banned_letters, misplaced_letters):
     # This function has four parameters: "word_list" as the complete word set, "banned_letters" as the forbidden letters,
     # "baseline_answer" as the array containing the regex of the final answer, and "misplaced_letters" as the array that contains letters that are correct but misplaced.
     # Priority list:
@@ -14,11 +14,10 @@ def filterWords(word_list, banned_letters, baseline_answer, misplaced_letters):
     # 2. Words that match the baseline answer (in regex) will be put on top of the list
     # 3. Words that has the misplaced letters will be put on the middle of the list
     # 4. Other words will be put on the bottom of the list
-    regex_results = ''.join(baseline_answer)
     wordHashList = PriorityHashQueue()
     try:
         for i in range(word_list.returnLength()):
-            word = word_list.dequeue(i).get_word()
+            word = word_list.dequeue(0).get_word()
             isBanned = False
             matching_letters = 0  # Contains the number of misplaced letters in the word
             for letter in banned_letters:
@@ -31,7 +30,7 @@ def filterWords(word_list, banned_letters, baseline_answer, misplaced_letters):
                         matching_letters += 1
                 wordHashList.enqueue(word, matching_letters)
     except Exception as e:
-        print(e)
+        print(repr(e))
     return wordHashList
 
 
@@ -51,12 +50,13 @@ first_words = ["adieu", "audio", "auloi", "aurei",
 # Importing the list of english words and limit the length of the words to five (as in Wordle)
 # All words here is assumed to have a meaning and is a valid answer to a wordle (lowercase).
 raw_english_words = nltk.corpus.words.words()
-sample_words = ["bruhs", "boing", "adieu", "meows", "blood",
-                "tiger", "pussy", "louie", "miaou", "ouija", "ourie", "uraei"]
+# sample_words = ["bruhs", "boing", "adieu", "meows", "blood",
+#                 "tiger", "pussy", "louie", "miaou", "ouija", "ourie", "uraei"]
 print(len(raw_english_words))
+# TODO: NANTI HAPUS
+# raw_english_words = raw_english_words[:100]
 wordHashList = PriorityHashQueue()
-for word in sample_words:
-    print(word)
+for word in raw_english_words:
     if len(word) == 5 and not hasUpperCase(word):
         wordHashList.enqueue(word, 0)
 print(wordHashList.returnLength())
@@ -79,34 +79,35 @@ hasFoundAnswer = False
 num_iterations = 1
 while not hasFoundAnswer:
     # If the loop starts at zero or baseline_answers are all '.' (wildcards), then the try words from the first_words list
-    if num_iterations == 0 or all(x == '.' for x in baseline_answers):
+    if num_iterations == 0:
         attempt = first_words.pop(0)
     else:
         # If the loop starts at one or more than baseline_answers are not all '.' (wildcards), then the try words from the wordHashList list
-        attempt = wordHashList.returnTopValue().get_word()
-    print("Current attempt uses the word: {}".format(attempt))
-    print("Number of iterations: {}\n".format(num_iterations))
+        attempt = wordHashList.dequeue(0).get_word()
     attempt_arr = list(attempt)
     for i in range(5):  # 5 is the length of words in the answer (default)
         if attempt_arr[i] == answer_arr[i]:
             # Replace the '.' with the correct letter
             baseline_answers[i] = attempt_arr[i]
-        elif attempt_arr[i] in answer:
+        elif attempt_arr[i] in answer and attempt_arr[i] not in misplaced_letters:
             misplaced_letters.append(attempt_arr[i])
-        else:
+        elif attempt_arr[i] not in banned_letters and attempt_arr[i] not in answer:
             banned_letters.append(attempt_arr[i])
     # If the baseline_answers are all not '.', then the loop is over
     if all(x != '.' for x in baseline_answers):
         hasFoundAnswer = True
-        print("The word is {} and the number of iterations are {}".format(
+        print("\nThe word is {} and the number of iterations are {}".format(
             attempt, num_iterations))
     else:
-        num_iterations += 1
         # Refresh the wordHashList list
         wordHashList = filterWords(
-            wordHashList, banned_letters, baseline_answers, misplaced_letters)
+            wordHashList, banned_letters, misplaced_letters)
         print("\nCurrent state:")
+        print("Attempt word: {}".format(attempt))
         print("Number of iterations: {}".format(num_iterations))
         print("Baseline answer: {}".format(''.join(baseline_answers)))
         print("Misplaced letters: {}".format(''.join(misplaced_letters)))
-        print("Banned letters: {}\n".format(''.join(banned_letters)))
+        print("Banned letters: {}".format(''.join(banned_letters)))
+        print("Current length of wordHashList: {}".format(
+            wordHashList.returnLength()))
+        num_iterations += 1

@@ -28,23 +28,14 @@ class PriorityHashQueue:
 
     def enqueue(self, word, match_value):
         if (self.returnLength() == 0):
-            print("enqueue pas len 0")
-            print(self.returnLength())
-            print()
             self.queue.append(HashMap(word, match_value))
         else:
             newEntry = HashMap(word, match_value)
             for i in range(self.returnLength()):
                 if (i == self.returnLength() - 1 or match_value == 0):
-                    print("enqueue di awal pas lennya {}".format(
-                        self.returnLength()))
-                    self.returnContents()
                     self.queue.append(newEntry)
                     break
                 elif (match_value > self.queue[i].get_match_value()):
-                    print("enqueue di akhir pas lennya {}".format(
-                        self.returnLength()))
-                    self.returnContents()
                     self.queue.insert(i, newEntry)
                     break
 
