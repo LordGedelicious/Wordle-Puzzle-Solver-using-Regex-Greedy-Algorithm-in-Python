@@ -5,9 +5,11 @@ import numpy as np
 import pandas as pd
 from HashTable import PriorityHashQueue
 import time
+import regex as re
 
 
-def filterWordsBannedLetters(word_list, banned_letters, misplaced_letters):
+def filterWordsBannedLetters(word_list, banned_letters, baseline_answers, misplaced_letters):
+    # This filter uses list of banned letters to eliminate words from the candidate list (word_list)
     wordHashList = PriorityHashQueue()
     try:
         for i in range(word_list.returnLength()):
@@ -19,26 +21,68 @@ def filterWordsBannedLetters(word_list, banned_letters, misplaced_letters):
                     isBanned = True
                     break
             if not isBanned:
+                index = 0
                 for letter in misplaced_letters:
-                    if letter in word:
+                    if letter == baseline_answers[index]:
+                        matching_letters += 6
+                    elif letter in word:
                         matching_letters += 1
+                    index += 1
                 wordHashList.enqueue(word, matching_letters)
     except Exception as e:
         print(repr(e))
     return wordHashList
 
 
-def filterWordsRegex(word_list, regex, misplaced_letters):
+def filterWordsRegex(word_list, baseline_answers, misplaced_letters):
+    # This filter uses regex to eliminate words from the candidate list (word_list)
     wordHashList = PriorityHashQueue()
     try:
         for i in range(word_list.returnLength()):
             word = word_list.dequeue(0).get_word()
-            if regex.match(word):
-                wordHashList.enqueue(word, 0)
+            isBanned = False
+            matching_letters = 0  # Contains the number of misplaced letters in the word
+            if not re.match("".join(baseline_answers), word):
+                isBanned = True
+            if not isBanned:
+                index = 0
+                for letter in misplaced_letters:
+                    if letter == baseline_answers[index]:
+                        matching_letters += 6
+                    elif letter in word:
+                        matching_letters += 1
+                    index += 1
+                wordHashList.enqueue(word, matching_letters)
     except Exception as e:
         print(repr(e))
     return wordHashList
 
+def filterWordsBannedLettersRegex(word_list, banned_letters, baseline_answers, misplaced_letters):
+    # This filter uses regex and list of banned letters to eliminate words from the candidate list (word_list)
+    wordHashList = PriorityHashQueue()
+    try:
+        for i in range(word_list.returnLength()):
+            word = word_list.dequeue(0).get_word()
+            isBanned = False
+            matching_letters = 0  # Contains the number of misplaced letters in the word
+            for letter in banned_letters:
+                if letter in word:
+                    isBanned = True
+                    break
+            if not isBanned and not re.match("".join(baseline_answers), word):
+                isBanned = True
+            if not isBanned:
+                index = 0
+                for letter in misplaced_letters:
+                    if letter == baseline_answers[index]:
+                        matching_letters += 6
+                    elif letter in word:
+                        matching_letters += 1
+                    index += 1
+                wordHashList.enqueue(word, matching_letters)
+    except Exception as e:
+        print(repr(e))
+    return wordHashList
 
 def hasUpperCase(word):
     # This function takes a list of words and returns a list of words that contain at least one uppercase letter
@@ -49,6 +93,7 @@ def hasUpperCase(word):
 
 
 def isWordInDictionary(word, dictionary):
+    # This function takes a word and a dictionary and returns True if the word is in the dictionary
     return word in dictionary
 
 
@@ -122,9 +167,10 @@ def main():
             print("\nThe word is {} and the number of iterations are {}".format(
                 attempt, num_iterations))
         else:
-            # Refresh the wordHashList list
-            wordHashList = filterWordsBannedLetters(
-                wordHashList, banned_letters, misplaced_letters)
+            # Refresh the wordHashList list. Uncomment necessary lines to use the filterWords function
+            # wordHashList = filterWordsBannedLetters(wordHashList, banned_letters, baseline_answers, misplaced_letters)
+            # wordHashList = filterWordsRegex(wordHashList, baseline_answers, misplaced_letters)
+            wordHashList = filterWordsBannedLettersRegex(wordHashList, banned_letters, baseline_answers, misplaced_letters)
             print("\nCurrent state:")
             print("Attempt word: {}".format(attempt))
             print("Number of iterations: {}".format(num_iterations))
